@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ThunkRejectedValue } from '../utils';
+import { ErrorData } from '../../lib/storeApi/utils';
 import { fetchUser, login, signUp } from './thunks';
 
 import { User } from './types';
@@ -8,7 +8,7 @@ type UserSliceState = {
   data: null | User;
   token: null | string;
   loading: 'idle' | 'pending' | 'succeeded' | 'failed';
-  error: null | ThunkRejectedValue;
+  error: null | ErrorData;
 };
 
 const initialState: UserSliceState = {

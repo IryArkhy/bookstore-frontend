@@ -1,13 +1,13 @@
 import { isAxiosError } from 'axios';
-import { isServerError, isValidationError } from '../lib/store-api';
+import { isServerError, isValidationError } from './store-api';
 
-export type ThunkRejectedValue = {
+export type ErrorData = {
   message: string;
 };
 
 export const DEFAULT_ERROR = { message: "An error ocurred, couldn't make a request" };
 
-export function handleError(error: unknown): ThunkRejectedValue {
+export function handleError(error: unknown): ErrorData {
   if (isAxiosError(error)) {
     const resData = error.response?.data;
     if (isValidationError(resData)) {

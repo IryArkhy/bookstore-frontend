@@ -7,13 +7,14 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    const store = localStorage.getItem('persist:root') as string | null;
+    const store = localStorage.getItem('persist:root');
 
     if (store) {
-      const parsedStore = JSON.parse(store) as RootState;
+      const { user } = JSON.parse(store) as { user: string };
+      const parsedUser = JSON.parse(user) as RootState['user'];
 
-      if (parsedStore.user.token && config.headers) {
-        config.headers['Authorization'] = `Bearer ${parsedStore.user.token}`;
+      if (parsedUser.token && config.headers) {
+        config.headers['Authorization'] = `Bearer ${parsedUser.token}`;
       }
     }
 

@@ -23,7 +23,7 @@ import { useDispatch } from '../../redux/hooks';
 import { ROUTES } from '../../routes';
 import { login } from '../../redux/user/thunks';
 import { NotificationContext } from '../../lib/notifications';
-import { ThunkRejectedValue } from '../../redux/utils';
+import { ErrorData } from '../../lib/storeApi/utils';
 
 type LoginFormValues = {
   email: string;
@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
     const resultAction = await dispatch(login({ email: values.email, password: values.password }));
 
     if (resultAction.meta.requestStatus === 'rejected') {
-      notifyError((resultAction.payload as ThunkRejectedValue).message);
+      notifyError((resultAction.payload as ErrorData).message);
     } else {
       navigate(ROUTES.BOOKS_LIST);
     }

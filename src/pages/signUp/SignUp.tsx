@@ -22,7 +22,7 @@ import { ReactComponent as Authentication } from '../../assets/authentication.sv
 import { useDispatch } from '../../redux/hooks';
 import { NotificationContext } from '../../lib/notifications';
 import { ROUTES } from '../../routes';
-import { ThunkRejectedValue } from '../../redux/utils';
+import { ErrorData } from '../../lib/storeApi/utils';
 import { signUp } from '../../redux/user/thunks';
 
 type SignUpFormValues = {
@@ -57,7 +57,7 @@ export const SignUp: React.FC = () => {
     const resultAction = await dispatch(signUp({ email, username, password }));
 
     if (resultAction.meta.requestStatus === 'rejected') {
-      notifyError((resultAction.payload as ThunkRejectedValue).message);
+      notifyError((resultAction.payload as ErrorData).message);
     } else {
       navigate(ROUTES.BOOKS_LIST);
     }

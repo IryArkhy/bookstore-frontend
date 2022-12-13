@@ -1,4 +1,4 @@
-import { isObject } from './type-guards';
+import { isObject } from '../type-guards';
 
 export type ValidationErrorItem = {
   location: 'string';

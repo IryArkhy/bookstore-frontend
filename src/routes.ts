@@ -9,5 +9,13 @@ export const ROUTES = {
       return this.INDEX.replace(':bookID', id);
     },
   },
+  ORDER_LIST: '/orders',
+  ORDER: {
+    INDEX: '/orders/:orderID',
+    createPath: function createPath(id: string): string {
+      return this.INDEX.replace(':orderID', id);
+    },
+  },
+  SHOPPING_CART: '/shopping-cart',
   USER_ACCOUNT: '/profile',
 };

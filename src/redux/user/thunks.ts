@@ -1,12 +1,12 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../../lib/axios';
-import { handleError, ThunkRejectedValue } from '../utils';
+import { handleError, ErrorData } from '../../lib/storeApi/utils';
 import { User } from './types';
 
 export const login = createAsyncThunk<
   { token: string; user: User },
   { email: string; password: string },
-  { rejectValue: ThunkRejectedValue }
+  { rejectValue: ErrorData }
 >('user/login', async (data, thunkApi) => {
   try {
     const tokenResponse = await axiosInstance.post<{ token: string }>('/signin', {
@@ -30,7 +30,7 @@ export const login = createAsyncThunk<
 export const signUp = createAsyncThunk<
   { token: string; user: User },
   { email: string; username: string; password: string },
-  { rejectValue: ThunkRejectedValue }
+  { rejectValue: ErrorData }
 >('user/signUp', async (data, thunkApi) => {
   try {
     const tokenResponse = await axiosInstance.post<{ token: string }>('/user', {
@@ -52,7 +52,7 @@ export const signUp = createAsyncThunk<
   }
 });
 
-export const fetchUser = createAsyncThunk<User, any, { rejectValue: ThunkRejectedValue }>(
+export const fetchUser = createAsyncThunk<User, any, { rejectValue: ErrorData }>(
   'user/fetch',
   async (_, thunkApi) => {
     try {

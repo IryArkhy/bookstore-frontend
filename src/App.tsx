@@ -1,6 +1,6 @@
 import React from 'react';
-import { Route, BrowserRouter, Routes } from 'react-router-dom';
-import { Box, createTheme, ThemeProvider } from '@mui/material';
+import { Route, BrowserRouter, Routes, Navigate } from 'react-router-dom';
+import { createTheme, ThemeProvider } from '@mui/material';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
@@ -13,6 +13,10 @@ import { ProtectedRoute } from './lib/router-dom';
 import NotificationProvider from './lib/notifications';
 import { ROUTES } from './routes';
 import { SignUp } from './pages/signUp';
+import { Books } from './pages/books';
+import { UserProfile } from './pages/userProfile';
+import { Orders } from './pages/orders';
+import { Order } from './pages/order';
 
 function Router() {
   const token = useSelector(getToken);
@@ -20,13 +24,38 @@ function Router() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path={ROUTES.BASE} element={<Navigate to={ROUTES.BOOKS_LIST} />} />
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
         <Route
-          path="/books"
+          path={ROUTES.BOOKS_LIST}
           element={
             <ProtectedRoute token={token}>
-              <Box>books</Box>
+              <Books />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.USER_ACCOUNT}
+          element={
+            <ProtectedRoute token={token}>
+              <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.ORDER_LIST}
+          element={
+            <ProtectedRoute token={token}>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.ORDER.INDEX}
+          element={
+            <ProtectedRoute token={token}>
+              <Order />
             </ProtectedRoute>
           }
         />
