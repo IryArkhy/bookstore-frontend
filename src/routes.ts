@@ -1,6 +1,7 @@
 export const ROUTES = {
   BASE: '/',
   LOGIN: '/login',
+  SIGN_UP: '/signup',
   BOOKS_LIST: '/books',
   BOOK: {
     INDEX: '/books/:bookID',
