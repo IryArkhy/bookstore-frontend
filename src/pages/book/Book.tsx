@@ -1,4 +1,6 @@
-import { SendRounded } from '@mui/icons-material';
+import { SendRounded, ShoppingCartRounded } from '@mui/icons-material';
+import AddReactionIcon from '@mui/icons-material/AddReaction';
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Avatar,
   Box,
@@ -10,29 +12,34 @@ import {
   CircularProgress,
   Container,
   Divider,
+  IconButton,
   Rating,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridEventListener, GridRowsProp } from '@mui/x-data-grid';
 import { format } from 'date-fns';
-import EmojiPicker from 'emoji-picker-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { meanBy } from 'lodash';
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import BookSVG from '../../assets/book.svg';
-import { Header, StatusChip } from '../../components';
+import { Header } from '../../components';
 import { NotificationContext } from '../../lib/notifications';
-import { BookDetails, fetchBookByID } from '../../lib/storeApi/books';
+import { BookDetails, fetchBookByID, postBookComment } from '../../lib/storeApi/books';
 import { handleError } from '../../lib/storeApi/utils';
 import { getAdjustedImageSize } from '../../lib/styles';
-import { ROUTES } from '../../routes';
 
 export const Book: React.FC = () => {
-  const navigate = useNavigate();
   const params = useParams<{ bookID: string; authorID: string }>();
   const [isBookLoading, setIsBookLoading] = React.useState(false);
+  const [isCommentLoading, setIsCommentLoading] = React.useState(false);
+  const [comment, setComment] = React.useState('');
+  const [userRating, setUserRating] = React.useState<number | null>(null);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
+  const emojiPickerRef = React.useRef<HTMLDivElement | null>(null);
+
   const [book, setBook] = React.useState<BookDetails | null>(null);
   const { notifyError } = React.useContext(NotificationContext);
 
@@ -52,6 +59,19 @@ export const Book: React.FC = () => {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setIsEmojiPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+    };
   }, []);
 
   if (isBookLoading) {
@@ -96,10 +116,39 @@ export const Book: React.FC = () => {
     );
   }
 
-  const imageProperties = getAdjustedImageSize(
-    { height: book.bookAssest.height, width: book.bookAssest.width },
-    { property: 'width', value: 300 },
-  );
+  const imageProperties = book.bookAssest
+    ? getAdjustedImageSize(
+        { height: book.bookAssest.height, width: book.bookAssest.width },
+        { property: 'width', value: 300 },
+      )
+    : { width: 300, height: 475 };
+
+  const averageRating = meanBy(book.bookComments, (comment) => comment.rating ?? 0);
+
+  const handleEmojiClick = (emoji: EmojiClickData) => {
+    setComment((current) => current.concat(emoji.emoji));
+  };
+
+  const handleCommentSubmit = async () => {
+    setIsCommentLoading(true);
+    try {
+      const response = await postBookComment({
+        bookID: book.id,
+        authorID: book.authorID,
+        comment,
+        rating: userRating,
+      });
+      setBook((current) =>
+        current ? { ...current, bookComments: response.data.comments } : current,
+      );
+    } catch (error) {
+      notifyError(handleError(error).message);
+    }
+    setIsCommentLoading(false);
+    setComment('');
+    setUserRating(null);
+  };
+
   return (
     <Box>
       <Header />
@@ -115,26 +164,42 @@ export const Book: React.FC = () => {
                 sx={{
                   width: imageProperties.width,
                   borderRadius: '4px',
+
+                  transform: (book.asset ?? BookSVG) === BookSVG ? 'scale(0.9)' : undefined,
+                  objectFit: (book.asset ?? BookSVG) === BookSVG ? 'contain' : 'cover',
                 }}
               />
-              <Stack>
-                <Typography>{book.title}</Typography>
-                <Typography>
-                  By {book.author.name} {book.author.surname}
-                </Typography>
-                <Typography> {book.year} year</Typography>
+              <Stack gap={2}>
+                <Stack gap={0}>
+                  <Typography variant="h6">{book.title}</Typography>
+                  <Typography color="GrayText" variant="body2">
+                    By {book.author.name} {book.author.surname}
+                  </Typography>
+                  <Typography color="GrayText" variant="body2">
+                    {book.year} year
+                  </Typography>
+                </Stack>
+                <Rating name="book-rating" value={averageRating} readOnly precision={0.2} />
 
-                <Typography>Annotation</Typography>
+                <Typography variant="subtitle1">Annotation</Typography>
                 <Box flex={1}>
-                  <Typography>{book.description}</Typography>
+                  <Typography variant="body2" align="justify">
+                    {book.description}
+                  </Typography>
                 </Box>
                 <Box display="flex" py={2} justifyContent="space-between" alignItems="center">
-                  <Chip label="In stock" />
+                  <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                    <Chip label="In stock" color="info" />
+                    {book.genres.map(({ genre }) => (
+                      <Chip key={genre.id} label={genre.name} />
+                    ))}
+                  </Box>
+
                   <Box display="flex" gap={2} alignItems="center">
                     <Typography variant="h6" fontWeight={600} color="darkcyan">
                       {book.price} ₴
                     </Typography>
-                    <Button color="primary" variant="contained">
+                    <Button color="primary" variant="contained" startIcon={<ShoppingCartRounded />}>
                       Buy
                     </Button>
                   </Box>
@@ -144,55 +209,115 @@ export const Book: React.FC = () => {
           </Card>
           <Card>
             <CardContent>
-              <Box>
-                <Avatar />
-                <TextField
-                  label="Comment"
-                  placeholder="Leave your comment.."
-                  multiline
-                  // value={}
-                  onChange={() => {}}
-                  rows={4}
-                />
-                <EmojiPicker />
-                <Button startIcon={<SendRounded />}>Send</Button>
-              </Box>
-              {book.bookComments.length ? (
-                book.bookComments.map((comment) => (
-                  <React.Fragment key={comment.id}>
-                    <Stack>
-                      <Box>
-                        <Avatar />
-                        <Typography>{comment.user.username}</Typography>
-                        <Typography>{format(new Date(comment.createdAt), 'dd MM yyyy')}</Typography>
-                      </Box>
+              <Stack gap={3}>
+                <Box>
+                  <Box display="flex" gap={2} alignItems="center" mb={2}>
+                    <Avatar sizes="small" />
+                    <Stack gap={1}>
+                      <Typography variant="body2">Leave your review</Typography>
                       <Rating
-                        name="read-only"
-                        disabled={!comment.rating}
-                        value={comment.rating}
-                        readOnly
+                        size="medium"
+                        value={userRating}
+                        onChange={(_, val) => setUserRating(val)}
                       />
-                      <Typography>{comment.comment}</Typography>
                     </Stack>
-                    <Divider />
-                  </React.Fragment>
-                ))
-              ) : (
-                <Typography>There're no comments yet. Create the first one!</Typography>
-              )}
+                  </Box>
+
+                  <Stack
+                    sx={{
+                      width: 0.6,
+                      gap: 1,
+                    }}
+                  >
+                    <TextField
+                      label="Comment"
+                      placeholder="Leave your comment.."
+                      multiline
+                      value={comment}
+                      onChange={({ target }) => setComment(target.value)}
+                      rows={3}
+                      sx={{ width: 1 }}
+                    />
+                    <Box
+                      display="flex"
+                      gap={2}
+                      width={1}
+                      justifyContent="flex-end"
+                      position="relative"
+                    >
+                      <IconButton onClick={() => setIsEmojiPickerOpen(true)} size="small">
+                        <AddReactionIcon color="secondary" />
+                      </IconButton>
+
+                      <LoadingButton
+                        loading={isCommentLoading}
+                        disabled={!userRating || !comment}
+                        loadingPosition="start"
+                        startIcon={<SendRounded />}
+                        variant="outlined"
+                        onClick={handleCommentSubmit}
+                      >
+                        Send
+                      </LoadingButton>
+                    </Box>
+                    {isEmojiPickerOpen && (
+                      <Box
+                        ref={emojiPickerRef}
+                        sx={{
+                          position: 'absolute',
+                          left: 0,
+                          bottom: '-27px',
+                          zIndex: 999,
+                          transform: 'translate(50%, 100%)',
+                        }}
+                      >
+                        <EmojiPicker
+                          height={150}
+                          searchDisabled
+                          onEmojiClick={handleEmojiClick}
+                          previewConfig={{ showPreview: false }}
+                        />
+                      </Box>
+                    )}
+                  </Stack>
+                </Box>
+                <Divider sx={{ width: 0.6 }} />
+                {book.bookComments.length ? (
+                  book.bookComments.map((comment) => (
+                    <React.Fragment key={comment.id}>
+                      <Stack width={0.6} gap={1}>
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Avatar sx={{ width: 24, height: 24 }} />
+                          <Typography>{comment.user.username}</Typography>
+                        </Box>
+                        <Stack gap={1} px={2}>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Typography variant="body2" color="GrayText">
+                              {format(new Date(comment.createdAt), 'dd MMM yyyy')}
+                            </Typography>
+                            <Rating
+                              name="user-book-rating"
+                              value={comment.rating}
+                              readOnly
+                              size="small"
+                            />
+                          </Box>
+
+                          <Typography align="justify">{comment.comment}</Typography>
+                        </Stack>
+                      </Stack>
+                      <Divider sx={{ width: 0.6 }} />
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <Typography variant="body2" color="GrayText">
+                    There're no comments yet. Create the first one!
+                  </Typography>
+                )}
+              </Stack>
             </CardContent>
           </Card>
         </Stack>
-        {/* <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto',
-            gridTemplateRows: 'auto',
-          }}
-        >
-          <Box>1</Box>
-          <Box>2</Box>
-        </Box> */}
       </Container>
     </Box>
   );

@@ -9,18 +9,19 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { differenceInDays, format } from 'date-fns';
 import { styled, useTheme } from '@mui/material/styles';
+import { differenceInDays, format } from 'date-fns';
 import React from 'react';
-import { Header, StatusChip } from '../../components';
-import { ReactComponent as ProfileInfo } from '../../assets/personal-info.svg';
+import { useNavigate } from 'react-router-dom';
+
 import { ReactComponent as Celebrate } from '../../assets/celebrate.svg';
+import { ReactComponent as ProfileInfo } from '../../assets/personal-info.svg';
+import { Header, StatusChip } from '../../components';
+import { NotificationContext } from '../../lib/notifications';
+import { UserProfileOrder, fetchUserOrders } from '../../lib/storeApi/orders';
+import { handleError } from '../../lib/storeApi/utils';
 import { useSelector } from '../../redux/hooks';
 import { getUser } from '../../redux/user/selectors';
-import { fetchUserOrders, UserProfileOrder } from '../../lib/storeApi/orders';
-import { handleError } from '../../lib/storeApi/utils';
-import { NotificationContext } from '../../lib/notifications';
-import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes';
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -91,7 +92,7 @@ export const UserProfile: React.FC = () => {
                     </Typography>
 
                     <Box display="flex" gap={2} mb={1}>
-                      <Chip label={`${order.totalPrice} UAH`} color="success" size="small" />
+                      <Chip label={`${order.totalPrice} ₴`} color="success" size="small" />
                       <StatusChip status={order.status} />
                     </Box>
                     <Box display="flex" justifyContent="flex-end">
