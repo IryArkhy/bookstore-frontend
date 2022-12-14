@@ -9,10 +9,11 @@ import {
   Divider,
   CardMedia,
   useTheme,
+  ButtonBase,
 } from '@mui/material';
 import { format } from 'date-fns';
 import React from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Header, StatusChip } from '../../components';
 import { NotificationContext } from '../../lib/notifications';
 import { fetchOrderByID, OrderInfo } from '../../lib/storeApi/orders';
@@ -46,6 +47,26 @@ export const Order: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (isOrderLoading) {
+    return (
+      <Box>
+        <Header />
+        <Container sx={{ py: 5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        </Container>
+      </Box>
+    );
+  }
+
   if (!order) {
     return (
       <Box>
@@ -68,10 +89,6 @@ export const Order: React.FC = () => {
     );
   }
 
-  // const handleRowClick: GridEventListener<'rowClick'> = ({ id }) => {
-  //   navigate(ROUTES.ORDER.createPath(id as string));
-  // };
-
   const orderHash = () => {
     const arr = order.id.split('-');
     return arr[arr.length - 1];
@@ -81,32 +98,49 @@ export const Order: React.FC = () => {
     <Box>
       <Header />
       <Container sx={{ py: 5 }}>
-        {isOrderLoading ? (
-          <CircularProgress />
-        ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 2fr',
-              gridTemplateRows: 'auto',
-              columnGap: 3,
-            }}
-          >
-            <Card>
-              <CardContent>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 2fr',
+            gridTemplateRows: 'auto',
+            columnGap: 3,
+          }}
+        >
+          <Card>
+            <CardContent>
+              <Stack gap={2}>
                 <Typography align="left" variant="subtitle1" fontWeight={600}>
                   Order #{orderHash()}
                 </Typography>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <Typography mb={2} align="left" variant="subtitle1" fontWeight={600}>
-                  Purchased books
+                <Typography align="left" variant="body2" color="GrayText">
+                  {format(new Date(order.createdAt), 'dd MMM yyyy')}
                 </Typography>
-                <Stack gap={2} mb={3} sx={{ maxHeight: '60vh', overflowY: 'scroll' }}>
-                  {order.items.map(({ book, id, amount }) => (
-                    <React.Fragment key={id}>
+                <Box>
+                  <StatusChip status={order.status} />
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <Typography mb={2} align="left" variant="subtitle1" fontWeight={600}>
+                Purchased books
+              </Typography>
+              <Stack gap={2} mb={3} sx={{ maxHeight: '60vh', overflowY: 'scroll' }}>
+                {order.items.map(({ book, id, amount, bookId }) => (
+                  <React.Fragment key={id}>
+                    <ButtonBase
+                      onClick={() => navigate(ROUTES.BOOK.createPath(bookId, book.authorID))}
+                      sx={{
+                        width: 1,
+                        display: 'block',
+                        transition: 'transform 200ms ease-in 100ms',
+                        '&:hover': {
+                          transform: 'scale(0.9)',
+                          transition: 'transform 200ms ease-out',
+                        },
+                      }}
+                    >
                       <Box display="flex" alignItems="center">
                         <Box display="flex" gap={2} alignItems="center" flex={1}>
                           <Box
@@ -124,7 +158,7 @@ export const Order: React.FC = () => {
                               alt="book-cover"
                             />
                           </Box>
-                          <Box>
+                          <Stack>
                             <Typography align="left" variant="body1">
                               {book.title}
                             </Typography>
@@ -134,47 +168,47 @@ export const Order: React.FC = () => {
                             <Typography color="darkcyan" align="left" variant="caption">
                               Quantity: {amount}
                             </Typography>
-                          </Box>
+                          </Stack>
                         </Box>
                         <Box>
                           <Typography>{book.price} ₴</Typography>
                         </Box>
                       </Box>
+                    </ButtonBase>
 
-                      <Divider />
-                    </React.Fragment>
-                  ))}
-                </Stack>
-                <Stack gap={1}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" color="GrayText">
-                      Shipping
-                    </Typography>
-                    <Typography variant="body2" color="GrayText">
-                      0 ₴
-                    </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" color="GrayText">
-                      Taxes
-                    </Typography>
-                    <Typography variant="body2" color="GrayText">
-                      0 ₴
-                    </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="h6" fontWeight={600}>
-                      Total
-                    </Typography>
-                    <Typography variant="h6" color="darkcyan" fontWeight={600}>
-                      {order.totalPrice} ₴
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Box>
-        )}
+                    <Divider />
+                  </React.Fragment>
+                ))}
+              </Stack>
+              <Stack gap={1}>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body2" color="GrayText">
+                    Shipping
+                  </Typography>
+                  <Typography variant="body2" color="GrayText">
+                    0 ₴
+                  </Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body2" color="GrayText">
+                    Taxes
+                  </Typography>
+                  <Typography variant="body2" color="GrayText">
+                    0 ₴
+                  </Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="h6" fontWeight={600}>
+                    Total
+                  </Typography>
+                  <Typography variant="h6" color="darkcyan" fontWeight={600}>
+                    {order.totalPrice} ₴
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
       </Container>
     </Box>
   );

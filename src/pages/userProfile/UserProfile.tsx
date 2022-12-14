@@ -131,7 +131,7 @@ export const UserProfile: React.FC = () => {
                   }}
                 />
                 <Typography textAlign="left" variant="subtitle1" fontWeight={600}>
-                  User information
+                  Profile details
                 </Typography>
                 <Box width={0.6}>
                   <Box display="flex" justifyContent="space-around" alignItems="center">

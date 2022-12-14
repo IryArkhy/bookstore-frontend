@@ -17,6 +17,7 @@ import { Books } from './pages/books';
 import { UserProfile } from './pages/userProfile';
 import { Orders } from './pages/orders';
 import { Order } from './pages/order';
+import { Book } from './pages/book';
 
 function Router() {
   const token = useSelector(getToken);
@@ -56,6 +57,14 @@ function Router() {
           element={
             <ProtectedRoute token={token}>
               <Order />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.BOOK.INDEX}
+          element={
+            <ProtectedRoute token={token}>
+              <Book />
             </ProtectedRoute>
           }
         />

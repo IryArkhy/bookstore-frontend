@@ -4,9 +4,9 @@ export const ROUTES = {
   SIGN_UP: '/signup',
   BOOKS_LIST: '/books',
   BOOK: {
-    INDEX: '/books/:bookID',
-    createPath: function createPath(id: string): string {
-      return this.INDEX.replace(':bookID', id);
+    INDEX: '/books/:bookID/:authorID',
+    createPath: function createPath(id: string, authorID: string): string {
+      return this.INDEX.replace(':bookID', id).replace(':authorID', authorID);
     },
   },
   ORDER_LIST: '/orders',
