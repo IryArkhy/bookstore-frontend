@@ -1,4 +1,4 @@
-import { ClearAllRounded, ClearRounded } from '@mui/icons-material';
+import { ClearRounded } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
@@ -8,6 +8,7 @@ import React, { ChangeEventHandler } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ReactComponent as Logo } from '../assets/logo-no-background-white.svg';
+import { useCart } from '../lib/cart';
 import { useDispatch } from '../redux/hooks';
 import { clearUser } from '../redux/user/userSlice';
 import { ROUTES } from '../routes';
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   const dispatch = useDispatch();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const { cartItemsCount } = useCart();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -48,30 +50,28 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleLogout = () => {
-    console.log('gandle logout');
     dispatch(clearUser());
     handleClose();
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (event) => {
     if (event.key === 'Enter' && onSearchSubmit) {
-      // 👇 Get input value
       onSearchSubmit();
     }
   };
-  console.log(inputRef.current === document.activeElement);
 
-  // const renderClearInputBtn = () => {
-  //   if (inputRef.current === document.activeElement) {
-  //     return (
-  //       <IconButton onClick={onClearSearchInput}>
-  //         <ClearRounded color="inherit" />
-  //       </IconButton>
-  //     );
-  //   }
+  const renderClearInputBtn = () => {
+    if (inputRef.current === document.activeElement) {
+      return (
+        <IconButton color="inherit" onClick={onClearSearchInput}>
+          <ClearRounded />
+        </IconButton>
+      );
+    }
 
-  //   return null;
-  // };
+    return null;
+  };
+
   return (
     <AppBar position="static">
       <Container maxWidth="xl">
@@ -94,25 +94,25 @@ export const Header: React.FC<HeaderProps> = ({
                   <SearchIcon />
                 </SearchIconWrapper>
                 <StyledInputBase
-                  ref={inputRef}
                   value={searchValue}
                   onChange={onSearchChange}
                   placeholder="Search…"
                   inputProps={{ 'aria-label': 'search' }}
                   onKeyDown={handleKeyDown}
+                  inputRef={inputRef}
                 />
-                {/* {renderClearInputBtn} */}
+                {renderClearInputBtn()}
               </>
             </Search>
           )}
           <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
             <IconButton
-              onClick={() => navigate(ROUTES.SHOPPING_CART)}
+              onClick={() => navigate(ROUTES.CHECKOUT)}
               size="large"
-              aria-label="show 17 new notifications"
+              aria-label="shopping cart"
               color="inherit"
             >
-              <Badge badgeContent={17} color="error">
+              <Badge badgeContent={cartItemsCount} color="error">
                 <ShoppingCartRoundedIcon />
               </Badge>
             </IconButton>
@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Box sx={{ flexGrow: 0 }}>
             <IconButton
               size="large"
-              aria-label="account of current user"
+              aria-label="account of the current user"
               aria-controls="menu-appbar"
               aria-haspopup="true"
               onClick={handleMenu}

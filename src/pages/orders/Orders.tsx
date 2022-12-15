@@ -1,11 +1,12 @@
-import { Box, Container, Typography } from '@mui/material';
-import { DataGrid, GridRowsProp, GridEventListener, GridColDef } from '@mui/x-data-grid';
+import { Box, Typography } from '@mui/material';
+import { DataGrid, GridColDef, GridEventListener, GridRowsProp } from '@mui/x-data-grid';
 import { format } from 'date-fns';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header, StatusChip } from '../../components';
+
+import { Page, StatusChip } from '../../components';
 import { NotificationContext } from '../../lib/notifications';
-import { fetchUserOrders, UserProfileOrder } from '../../lib/storeApi/orders';
+import { UserProfileOrder, fetchUserOrders } from '../../lib/storeApi/orders';
 import { handleError } from '../../lib/storeApi/utils';
 import { ROUTES } from '../../routes';
 
@@ -56,31 +57,28 @@ export const Orders: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Header />
-      <Container sx={{ py: 5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Typography variant="h5" mb={3}>
-            Orders history
-          </Typography>
-        </Box>
-        <DataGrid
-          autoHeight
-          rows={rows}
-          columns={columns}
-          disableSelectionOnClick
-          onRowClick={handleRowClick}
-          loading={isOrdersLoading}
-          sx={{
-            '& .MuiDataGrid-cell:focus, .MuiDataGrid-cell:focus-within': {
-              outline: 'none',
-            },
-            '& .MuiDataGrid-row': {
-              cursor: 'pointer',
-            },
-          }}
-        />
-      </Container>
-    </Box>
+    <Page>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Typography variant="h5" mb={3}>
+          Orders history
+        </Typography>
+      </Box>
+      <DataGrid
+        autoHeight
+        rows={rows}
+        columns={columns}
+        disableSelectionOnClick
+        onRowClick={handleRowClick}
+        loading={isOrdersLoading}
+        sx={{
+          '& .MuiDataGrid-cell:focus, .MuiDataGrid-cell:focus-within': {
+            outline: 'none',
+          },
+          '& .MuiDataGrid-row': {
+            cursor: 'pointer',
+          },
+        }}
+      />
+    </Page>
   );
 };

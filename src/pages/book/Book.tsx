@@ -1,5 +1,6 @@
 import { SendRounded, ShoppingCartRounded } from '@mui/icons-material';
 import AddReactionIcon from '@mui/icons-material/AddReaction';
+import CheckIcon from '@mui/icons-material/Check';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Avatar,
@@ -10,7 +11,6 @@ import {
   CardMedia,
   Chip,
   CircularProgress,
-  Container,
   Divider,
   IconButton,
   Rating,
@@ -25,7 +25,8 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 
 import BookSVG from '../../assets/book.svg';
-import { Header } from '../../components';
+import { Page } from '../../components';
+import { useCart } from '../../lib/cart';
 import { NotificationContext } from '../../lib/notifications';
 import { BookDetails, fetchBookByID, postBookComment } from '../../lib/storeApi/books';
 import { handleError } from '../../lib/storeApi/utils';
@@ -42,6 +43,7 @@ export const Book: React.FC = () => {
 
   const [book, setBook] = React.useState<BookDetails | null>(null);
   const { notifyError } = React.useContext(NotificationContext);
+  const { cartItems, cartActions } = useCart();
 
   React.useEffect(() => {
     setIsBookLoading(true);
@@ -76,43 +78,37 @@ export const Book: React.FC = () => {
 
   if (isBookLoading) {
     return (
-      <Box>
-        <Header />
-        <Container sx={{ py: 5 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <CircularProgress />
-          </Box>
-        </Container>
-      </Box>
+      <Page>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      </Page>
     );
   }
 
   if (!book) {
     return (
-      <Box>
-        <Header />
-        <Container sx={{ py: 5 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="subtitle1" mb={3}>
-              No data
-            </Typography>
-          </Box>
-        </Container>
-      </Box>
+      <Page>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="subtitle1" mb={3}>
+            No data
+          </Typography>
+        </Box>
+      </Page>
     );
   }
 
@@ -149,176 +145,186 @@ export const Book: React.FC = () => {
     setUserRating(null);
   };
 
+  const handleBuyClick = () => {
+    if (Boolean(cartItems[book.id])) {
+      cartActions.removeBookFromCart(book.id);
+    } else {
+      cartActions.addBookToCart(book);
+    }
+  };
+
   return (
-    <Box>
-      <Header />
-      <Container sx={{ py: 5 }}>
-        <Stack gap={3}>
-          <Card>
-            <CardContent sx={{ display: 'flex', gap: 3 }}>
-              <CardMedia
-                component="img"
-                height={imageProperties.height}
-                image={book.asset ?? BookSVG}
-                alt="book-cover"
-                sx={{
-                  width: imageProperties.width,
-                  borderRadius: '4px',
+    <Page>
+      <Stack gap={3}>
+        <Card>
+          <CardContent sx={{ display: 'flex', gap: 3 }}>
+            <CardMedia
+              component="img"
+              height={imageProperties.height}
+              image={book.asset ?? BookSVG}
+              alt="book-cover"
+              sx={{
+                width: imageProperties.width,
+                borderRadius: '4px',
 
-                  transform: (book.asset ?? BookSVG) === BookSVG ? 'scale(0.9)' : undefined,
-                  objectFit: (book.asset ?? BookSVG) === BookSVG ? 'contain' : 'cover',
-                }}
-              />
-              <Stack gap={2}>
-                <Stack gap={0}>
-                  <Typography variant="h6">{book.title}</Typography>
-                  <Typography color="GrayText" variant="body2">
-                    By {book.author.name} {book.author.surname}
-                  </Typography>
-                  <Typography color="GrayText" variant="body2">
-                    {book.year} year
-                  </Typography>
-                </Stack>
-                <Rating name="book-rating" value={averageRating} readOnly precision={0.2} />
-
-                <Typography variant="subtitle1">Annotation</Typography>
-                <Box flex={1}>
-                  <Typography variant="body2" align="justify">
-                    {book.description}
-                  </Typography>
-                </Box>
-                <Box display="flex" py={2} justifyContent="space-between" alignItems="center">
-                  <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                    <Chip label="In stock" color="info" />
-                    {book.genres.map(({ genre }) => (
-                      <Chip key={genre.id} label={genre.name} />
-                    ))}
-                  </Box>
-
-                  <Box display="flex" gap={2} alignItems="center">
-                    <Typography variant="h6" fontWeight={600} color="darkcyan">
-                      {book.price} ₴
-                    </Typography>
-                    <Button color="primary" variant="contained" startIcon={<ShoppingCartRounded />}>
-                      Buy
-                    </Button>
-                  </Box>
-                </Box>
+                transform: (book.asset ?? BookSVG) === BookSVG ? 'scale(0.9)' : undefined,
+                objectFit: (book.asset ?? BookSVG) === BookSVG ? 'contain' : 'cover',
+              }}
+            />
+            <Stack gap={2}>
+              <Stack gap={0}>
+                <Typography variant="h6">{book.title}</Typography>
+                <Typography color="GrayText" variant="body2">
+                  By {book.author.name} {book.author.surname}
+                </Typography>
+                <Typography color="GrayText" variant="body2">
+                  {book.year} year
+                </Typography>
               </Stack>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Stack gap={3}>
-                <Box>
-                  <Box display="flex" gap={2} alignItems="center" mb={2}>
-                    <Avatar sizes="small" />
-                    <Stack gap={1}>
-                      <Typography variant="body2">Leave your review</Typography>
-                      <Rating
-                        size="medium"
-                        value={userRating}
-                        onChange={(_, val) => setUserRating(val)}
-                      />
-                    </Stack>
-                  </Box>
+              <Rating name="book-rating" value={averageRating} readOnly precision={0.2} />
 
-                  <Stack
-                    sx={{
-                      width: 0.6,
-                      gap: 1,
-                    }}
+              <Typography variant="subtitle1">Annotation</Typography>
+              <Box flex={1}>
+                <Typography variant="body2" align="justify">
+                  {book.description}
+                </Typography>
+              </Box>
+              <Box display="flex" py={2} justifyContent="space-between" alignItems="center">
+                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                  <Chip label="In stock" color="info" />
+                  {book.genres.map(({ genre }) => (
+                    <Chip key={genre.id} label={genre.name} />
+                  ))}
+                </Box>
+
+                <Box display="flex" gap={2} alignItems="center">
+                  <Typography variant="h6" fontWeight={600} color="darkcyan">
+                    {book.price} ₴
+                  </Typography>
+                  <Button
+                    color={cartItems[book.id] ? 'secondary' : 'primary'}
+                    variant="contained"
+                    startIcon={cartItems[book.id] ? <CheckIcon /> : <ShoppingCartRounded />}
+                    onClick={handleBuyClick}
                   >
-                    <TextField
-                      label="Comment"
-                      placeholder="Leave your comment.."
-                      multiline
-                      value={comment}
-                      onChange={({ target }) => setComment(target.value)}
-                      rows={3}
-                      sx={{ width: 1 }}
+                    {cartItems[book.id] ? 'In cart' : 'Buy'}
+                  </Button>
+                </Box>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Stack gap={3}>
+              <Box>
+                <Box display="flex" gap={2} alignItems="center" mb={2}>
+                  <Avatar sizes="small" />
+                  <Stack gap={1}>
+                    <Typography variant="body2">Leave your review</Typography>
+                    <Rating
+                      size="medium"
+                      value={userRating}
+                      onChange={(_, val) => setUserRating(val)}
                     />
-                    <Box
-                      display="flex"
-                      gap={2}
-                      width={1}
-                      justifyContent="flex-end"
-                      position="relative"
-                    >
-                      <IconButton onClick={() => setIsEmojiPickerOpen(true)} size="small">
-                        <AddReactionIcon color="secondary" />
-                      </IconButton>
-
-                      <LoadingButton
-                        loading={isCommentLoading}
-                        disabled={!userRating || !comment}
-                        loadingPosition="start"
-                        startIcon={<SendRounded />}
-                        variant="outlined"
-                        onClick={handleCommentSubmit}
-                      >
-                        Send
-                      </LoadingButton>
-                    </Box>
-                    {isEmojiPickerOpen && (
-                      <Box
-                        ref={emojiPickerRef}
-                        sx={{
-                          position: 'absolute',
-                          left: 0,
-                          bottom: '-27px',
-                          zIndex: 999,
-                          transform: 'translate(50%, 100%)',
-                        }}
-                      >
-                        <EmojiPicker
-                          height={150}
-                          searchDisabled
-                          onEmojiClick={handleEmojiClick}
-                          previewConfig={{ showPreview: false }}
-                        />
-                      </Box>
-                    )}
                   </Stack>
                 </Box>
-                <Divider sx={{ width: 0.6 }} />
-                {book.bookComments.length ? (
-                  book.bookComments.map((comment) => (
-                    <React.Fragment key={comment.id}>
-                      <Stack width={0.6} gap={1}>
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Avatar sx={{ width: 24, height: 24 }} />
-                          <Typography>{comment.user.username}</Typography>
-                        </Box>
-                        <Stack gap={1} px={2}>
-                          <Box display="flex" alignItems="center" gap={2}>
-                            <Typography variant="body2" color="GrayText">
-                              {format(new Date(comment.createdAt), 'dd MMM yyyy')}
-                            </Typography>
-                            <Rating
-                              name="user-book-rating"
-                              value={comment.rating}
-                              readOnly
-                              size="small"
-                            />
-                          </Box>
 
-                          <Typography align="justify">{comment.comment}</Typography>
-                        </Stack>
+                <Stack
+                  sx={{
+                    width: 0.6,
+                    gap: 1,
+                  }}
+                >
+                  <TextField
+                    label="Comment"
+                    placeholder="Leave your comment.."
+                    multiline
+                    value={comment}
+                    onChange={({ target }) => setComment(target.value)}
+                    rows={3}
+                    sx={{ width: 1 }}
+                  />
+                  <Box
+                    display="flex"
+                    gap={2}
+                    width={1}
+                    justifyContent="flex-end"
+                    position="relative"
+                  >
+                    <IconButton onClick={() => setIsEmojiPickerOpen(true)} size="small">
+                      <AddReactionIcon />
+                    </IconButton>
+
+                    <LoadingButton
+                      loading={isCommentLoading}
+                      disabled={!userRating || !comment}
+                      loadingPosition="start"
+                      startIcon={<SendRounded />}
+                      variant="outlined"
+                      onClick={handleCommentSubmit}
+                    >
+                      Send
+                    </LoadingButton>
+                  </Box>
+                  {isEmojiPickerOpen && (
+                    <Box
+                      ref={emojiPickerRef}
+                      sx={{
+                        position: 'absolute',
+                        left: 0,
+                        bottom: '-27px',
+                        zIndex: 999,
+                        transform: 'translate(50%, 100%)',
+                      }}
+                    >
+                      <EmojiPicker
+                        height={150}
+                        searchDisabled
+                        onEmojiClick={handleEmojiClick}
+                        previewConfig={{ showPreview: false }}
+                      />
+                    </Box>
+                  )}
+                </Stack>
+              </Box>
+              <Divider sx={{ width: 0.6 }} />
+              {book.bookComments.length ? (
+                book.bookComments.map((comment) => (
+                  <React.Fragment key={comment.id}>
+                    <Stack width={0.6} gap={1}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ width: 24, height: 24 }} />
+                        <Typography>{comment.user.username}</Typography>
+                      </Box>
+                      <Stack gap={1} px={2}>
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Typography variant="body2" color="GrayText">
+                            {format(new Date(comment.createdAt), 'dd MMM yyyy')}
+                          </Typography>
+                          <Rating
+                            name="user-book-rating"
+                            value={comment.rating}
+                            readOnly
+                            size="small"
+                          />
+                        </Box>
+
+                        <Typography align="justify">{comment.comment}</Typography>
                       </Stack>
-                      <Divider sx={{ width: 0.6 }} />
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <Typography variant="body2" color="GrayText">
-                    There're no comments yet. Create the first one!
-                  </Typography>
-                )}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Stack>
-      </Container>
-    </Box>
+                    </Stack>
+                    <Divider sx={{ width: 0.6 }} />
+                  </React.Fragment>
+                ))
+              ) : (
+                <Typography variant="body2" color="GrayText">
+                  There're no comments yet. Create the first one!
+                </Typography>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+    </Page>
   );
 };

@@ -6,7 +6,7 @@ import { Genre } from './genres';
 export type BookBase = {
   id: string;
   title: string;
-  asset: string; // url
+  asset: string | null; // url
   authorID: string;
   author: Author;
   description: string;

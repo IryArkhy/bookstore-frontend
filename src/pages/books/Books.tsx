@@ -1,4 +1,5 @@
 import { ShoppingCartRounded } from '@mui/icons-material';
+import CheckIcon from '@mui/icons-material/Check';
 import {
   Autocomplete,
   Box,
@@ -9,7 +10,7 @@ import {
   CardContent,
   CardMedia,
   Checkbox,
-  Container,
+  CircularProgress,
   FormControl,
   FormControlLabel,
   LinearProgress,
@@ -17,13 +18,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { current } from '@reduxjs/toolkit';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import BookSVG from '../../assets/book.svg';
+import { ReactComponent as Empty } from '../../assets/empty.svg';
 import { Header } from '../../components';
+import { useCart } from '../../lib/cart';
 import { NotificationContext } from '../../lib/notifications';
 import { BooksList, BooksListItem, fetchBooks, searchBook } from '../../lib/storeApi/books';
 import { Genre, fetchGenres } from '../../lib/storeApi/genres';
@@ -39,6 +41,7 @@ export const Books: React.FC = () => {
   const { notifyError } = React.useContext(NotificationContext);
   const [searchValue, setSearchValue] = React.useState('');
   const [genres, setGenres] = React.useState<Genre[]>([]);
+  const [year, setYear] = React.useState('');
   const {
     control,
     handleSubmit: onSubmit,
@@ -48,6 +51,7 @@ export const Books: React.FC = () => {
   } = useForm<GenreFormValues>();
   const [limit, setLimit] = React.useState(20);
   const [isBooksLoading, setIsBooksLoading] = React.useState(false);
+  const [isGenresLoading, setIsGenresLoading] = React.useState(false);
   const [books, setBooks] = React.useState<null | BooksList>();
   const loadMoreRef = React.useRef(null);
   const [searchedBooks, setSearchedBooks] = React.useState<Pick<
@@ -62,14 +66,17 @@ export const Books: React.FC = () => {
   const limitOptions = [40, 20, 10];
 
   React.useEffect(() => {
+    setIsGenresLoading(true);
     fetchGenres()
       .then((res) => {
         setGenres(res.data.genres);
         res.data.genres.forEach((genre) => setValue(genre.name, false));
       })
-      .catch((error) => notifyError(handleError(error).message));
+      .catch((error) => notifyError(handleError(error).message))
+      .finally(() => setIsGenresLoading(false));
 
     handleFetchBooks(getValues());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFetchBooks = (values: GenreFormValues, newOffset: number = 0) => {
@@ -80,7 +87,7 @@ export const Books: React.FC = () => {
       genres: Object.entries(values)
         .filter(([_, value]) => value)
         .map(([genre]) => genre),
-      year: undefined,
+      year: year ? parseInt(year) : undefined,
     })
       .then((res) => {
         setBooks(res.data);
@@ -119,7 +126,7 @@ export const Books: React.FC = () => {
             genres: Object.entries(getValues())
               .filter(([_, value]) => value)
               .map(([genre]) => genre),
-            year: undefined,
+            year: year ? parseInt(year) : undefined,
           });
           setBooks((current) =>
             current ? { ...data, books: [...current.books, ...data.books] } : current,
@@ -131,7 +138,8 @@ export const Books: React.FC = () => {
         }
       }
     },
-    [books?.offset],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [books, getValues, isBooksLoading, limit, year],
   );
 
   React.useEffect(() => {
@@ -158,16 +166,20 @@ export const Books: React.FC = () => {
       }, {} as GenreFormValues),
     );
     setLimit(20);
-    if (!searchBook) {
+    setYear('');
+
+    if (!searchedBooks) {
       handleFetchBooks(getValues(), 0);
     }
   };
 
-  // React.useEffect(() => {
-  //   if (!searchValue) {
-  //     handleFetchBooks(getValues(), 0);
-  //   }
-  // }, [searchValue]);
+  const handleClearSearch = () => {
+    setSearchValue('');
+    setSearchedBooks(null);
+    handleFetchBooks(getValues(), 0);
+  };
+
+  const booksForRendering = (books ?? searchedBooks ?? { books: [] }).books;
 
   return (
     <Box>
@@ -176,7 +188,7 @@ export const Books: React.FC = () => {
         searchValue={searchValue}
         onSearchChange={handleSearchValueChange}
         onSearchSubmit={handleSearch}
-        onClearSearchInput={() => handleFetchBooks(getValues(), 0)}
+        onClearSearchInput={handleClearSearch}
       />
       <Box sx={{ p: 5 }}>
         <Box
@@ -218,21 +230,40 @@ export const Books: React.FC = () => {
                     pb: 2,
                   }}
                 >
-                  <FormControl>
-                    {genres.map((genre) => (
-                      <Controller
-                        key={genre.id}
-                        name={genre.name}
-                        control={control}
-                        render={({ field: { value, ...rest } }) => (
-                          <FormControlLabel
-                            control={<Checkbox checked={value} {...rest} />}
-                            label={genre.name}
-                          />
-                        )}
-                      />
-                    ))}
-                  </FormControl>
+                  {isGenresLoading ? (
+                    <Stack alignItems="center">
+                      <CircularProgress />
+                    </Stack>
+                  ) : (
+                    <FormControl>
+                      {genres.map((genre) => (
+                        <Controller
+                          key={genre.id}
+                          name={genre.name}
+                          control={control}
+                          render={({ field: { value, ...rest } }) => (
+                            <FormControlLabel
+                              control={<Checkbox checked={value} {...rest} />}
+                              label={genre.name}
+                            />
+                          )}
+                        />
+                      ))}
+                    </FormControl>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent>
+                  <Typography pb={1} fontWeight={600} variant="subtitle1">
+                    Year
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="number"
+                    value={year}
+                    onChange={({ target }) => setYear(target.value)}
+                  />
                 </CardContent>
               </Card>
               <Card>
@@ -254,9 +285,21 @@ export const Books: React.FC = () => {
           </Box>
           <Box flex={3}>
             <Box display="flex" gap={3} flexWrap="wrap" justifyContent="center">
-              {(books ?? searchedBooks ?? { books: [] }).books.map((book) => (
-                <MultiActionAreaCard key={book.id} book={book} />
-              ))}
+              {!!booksForRendering.length &&
+                booksForRendering.map((book) => <MultiActionAreaCard key={book.id} book={book} />)}
+
+              {!isBooksLoading && !booksForRendering.length && (
+                <Stack alignItems="center" gap={3} mt={5}>
+                  <Empty
+                    style={{
+                      height: 150,
+                    }}
+                  />
+                  <Typography variant="body2" color="GrayText">
+                    No books found
+                  </Typography>
+                </Stack>
+              )}
 
               <Box
                 ref={loadMoreRef}
@@ -277,6 +320,8 @@ export const Books: React.FC = () => {
 
 export default function MultiActionAreaCard({ book }: { book: BooksListItem }) {
   const navigate = useNavigate();
+  const { cartItems, cartActions } = useCart();
+
   const img = book.bookAssest?.secureUrl ?? BookSVG;
   const imageRatio = book.bookAssest
     ? getAdjustedImageSize(
@@ -284,6 +329,15 @@ export default function MultiActionAreaCard({ book }: { book: BooksListItem }) {
         { property: 'width', value: 375 },
       )
     : { width: 375, height: 500 };
+
+  const handleBuyClick = () => {
+    if (Boolean(cartItems[book.id])) {
+      cartActions.removeBookFromCart(book.id);
+    } else {
+      const { id, author, title, price, bookAssest } = book;
+      cartActions.addBookToCart({ id, author, title, price, asset: bookAssest?.secureUrl ?? null });
+    }
+  };
 
   return (
     <Card
@@ -318,14 +372,19 @@ export default function MultiActionAreaCard({ book }: { book: BooksListItem }) {
           </Typography>
         </CardContent>
       </CardActionArea>
-      <CardActions sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+      <CardActions
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}
+      >
+        <Typography variant="h6" fontWeight={600} color="darkcyan">
+          {book.price} ₴
+        </Typography>
         <Button
-          startIcon={<ShoppingCartRounded />}
+          color={cartItems[book.id] ? 'secondary' : 'primary'}
           variant="contained"
-          size="small"
-          color="primary"
+          startIcon={cartItems[book.id] ? <CheckIcon /> : <ShoppingCartRounded />}
+          onClick={handleBuyClick}
         >
-          Buy
+          {cartItems[book.id] ? 'In cart' : 'Buy'}
         </Button>
       </CardActions>
     </Card>

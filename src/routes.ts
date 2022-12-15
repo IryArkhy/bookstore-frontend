@@ -16,6 +16,6 @@ export const ROUTES = {
       return this.INDEX.replace(':orderID', id);
     },
   },
-  SHOPPING_CART: '/shopping-cart',
+  CHECKOUT: '/checkout',
   USER_ACCOUNT: '/profile',
 };

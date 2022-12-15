@@ -1,14 +1,4 @@
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Container,
-  Grid,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Grid, Paper, Stack, Typography } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { differenceInDays, format } from 'date-fns';
 import React from 'react';
@@ -16,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { ReactComponent as Celebrate } from '../../assets/celebrate.svg';
 import { ReactComponent as ProfileInfo } from '../../assets/personal-info.svg';
-import { Header, StatusChip } from '../../components';
+import { Page, StatusChip } from '../../components';
 import { NotificationContext } from '../../lib/notifications';
 import { UserProfileOrder, fetchUserOrders } from '../../lib/storeApi/orders';
 import { handleError } from '../../lib/storeApi/utils';
@@ -118,84 +108,81 @@ export const UserProfile: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Header />
-      <Container sx={{ py: 3 }}>
-        <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-          <Grid item xs={6}>
-            <Item>
-              <Stack gap={4}>
-                <ProfileInfo
-                  style={{
-                    height: '100%',
-                    width: '100%',
-                  }}
-                />
-                <Typography textAlign="left" variant="subtitle1" fontWeight={600}>
-                  Profile details
-                </Typography>
-                <Box width={0.6}>
-                  <Box display="flex" justifyContent="space-around" alignItems="center">
-                    <Typography
-                      color={palette.text.primary}
-                      flex={1}
-                      variant="subtitle1"
-                      textAlign="left"
-                    >
-                      Username
-                    </Typography>
-                    <Typography flex={2} textAlign="left">
-                      {user?.username}
-                    </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-around" alignItems="center">
-                    <Typography
-                      color={palette.text.primary}
-                      flex={1}
-                      variant="subtitle1"
-                      textAlign="left"
-                    >
-                      Email
-                    </Typography>
-                    <Typography flex={2} textAlign="left">
-                      {user?.email}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Stack>
-            </Item>
-          </Grid>
-          <Grid item xs={6}>
+    <Page>
+      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+        <Grid item xs={6}>
+          <Item>
             <Stack gap={4}>
-              <Item>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography textAlign="left" variant="subtitle1" fontWeight={600}>
-                    Your recent purchases
+              <ProfileInfo
+                style={{
+                  height: '100%',
+                  width: '100%',
+                }}
+              />
+              <Typography textAlign="left" variant="subtitle1" fontWeight={600}>
+                Profile details
+              </Typography>
+              <Box width={0.6}>
+                <Box display="flex" justifyContent="space-around" alignItems="center">
+                  <Typography
+                    color={palette.text.primary}
+                    flex={1}
+                    variant="subtitle1"
+                    textAlign="left"
+                  >
+                    Username
                   </Typography>
-                  {!!orders.length && (
-                    <Button size="small" onClick={() => navigate(ROUTES.ORDER_LIST)}>
-                      View all
-                    </Button>
-                  )}
+                  <Typography flex={2} textAlign="left">
+                    {user?.username}
+                  </Typography>
                 </Box>
-
-                {renderLastOrders()}
-              </Item>
-              <Item sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Celebrate
-                  style={{
-                    height: 150,
-                    flex: 1,
-                  }}
-                />
-                <Typography flex={2} textAlign="left">
-                  You are with us {totalDays} full days!
-                </Typography>
-              </Item>
+                <Box display="flex" justifyContent="space-around" alignItems="center">
+                  <Typography
+                    color={palette.text.primary}
+                    flex={1}
+                    variant="subtitle1"
+                    textAlign="left"
+                  >
+                    Email
+                  </Typography>
+                  <Typography flex={2} textAlign="left">
+                    {user?.email}
+                  </Typography>
+                </Box>
+              </Box>
             </Stack>
-          </Grid>
+          </Item>
         </Grid>
-      </Container>
-    </Box>
+        <Grid item xs={6}>
+          <Stack gap={4}>
+            <Item>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography textAlign="left" variant="subtitle1" fontWeight={600}>
+                  Your recent purchases
+                </Typography>
+                {!!orders.length && (
+                  <Button size="small" onClick={() => navigate(ROUTES.ORDER_LIST)}>
+                    View all
+                  </Button>
+                )}
+              </Box>
+
+              {renderLastOrders()}
+            </Item>
+            <Item sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Celebrate
+                style={{
+                  height: 150,
+                  flex: 1,
+                }}
+              />
+              <Typography flex={2} textAlign="left">
+                You are with us {totalDays} full days!
+              </Typography>
+            </Item>
+          </Stack>
+        </Grid>
+      </Grid>
+    </Page>
   );
 };

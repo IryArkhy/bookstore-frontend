@@ -1,23 +1,25 @@
+import { ThemeProvider, createTheme } from '@mui/material';
 import React from 'react';
-import { Route, BrowserRouter, Routes, Navigate } from 'react-router-dom';
-import { createTheme, ThemeProvider } from '@mui/material';
 import { Provider } from 'react-redux';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { PersistGate } from 'redux-persist/integration/react';
 
-import { store, persistor } from './redux/store';
 import './App.css';
-import { Login } from './pages/login';
-import { useSelector } from './redux/hooks';
-import { getToken } from './redux/user/selectors';
-import { ProtectedRoute } from './lib/router-dom';
 import NotificationProvider from './lib/notifications';
-import { ROUTES } from './routes';
-import { SignUp } from './pages/signUp';
-import { Books } from './pages/books';
-import { UserProfile } from './pages/userProfile';
-import { Orders } from './pages/orders';
-import { Order } from './pages/order';
+import { ProtectedRoute } from './lib/router-dom';
+import { NotFoundPage } from './pages/404';
 import { Book } from './pages/book';
+import { Books } from './pages/books';
+import { Checkout } from './pages/checkout';
+import { Login } from './pages/login';
+import { Order } from './pages/order';
+import { Orders } from './pages/orders';
+import { SignUp } from './pages/signUp';
+import { UserProfile } from './pages/userProfile';
+import { useSelector } from './redux/hooks';
+import { persistor, store } from './redux/store';
+import { getToken } from './redux/user/selectors';
+import { ROUTES } from './routes';
 
 function Router() {
   const token = useSelector(getToken);
@@ -68,13 +70,31 @@ function Router() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path={ROUTES.CHECKOUT}
+          element={
+            <ProtectedRoute token={token}>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
 function App() {
-  const theme = createTheme();
+  const theme = createTheme({
+    palette: {
+      primary: {
+        main: '#3285a8',
+      },
+      secondary: {
+        main: '#F39237',
+      },
+    },
+  });
 
   return (
     <React.StrictMode>

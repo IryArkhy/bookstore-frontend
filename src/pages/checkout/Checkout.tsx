@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   ButtonBase,
   Card,
   CardContent,
@@ -15,37 +16,21 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import BookSVG from '../../assets/book.svg';
+import { ReactComponent as EmptyCart } from '../../assets/empty-cart.svg';
 import { Page, StatusChip } from '../../components';
+import { calculateTotalPrice, useCart } from '../../lib/cart';
 import { NotificationContext } from '../../lib/notifications';
-import { OrderInfo, fetchOrderByID } from '../../lib/storeApi/orders';
+import { OrderInfo } from '../../lib/storeApi/orders';
 import { handleError } from '../../lib/storeApi/utils';
 import { ROUTES } from '../../routes';
 
-export const Order: React.FC = () => {
+export const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const params = useParams<{ orderID: string }>();
   const { palette } = useTheme();
+  const { cartItems, cartActions, cartItemsCount } = useCart();
   const [isOrderLoading, setIsOrderLoading] = React.useState(false);
   const [order, setOrder] = React.useState<OrderInfo | null>(null);
   const { notifyError } = React.useContext(NotificationContext);
-
-  React.useEffect(() => {
-    if (params.orderID) {
-      setIsOrderLoading(true);
-      fetchOrderByID(params.orderID)
-        .then((res) => {
-          setOrder(res.data.order);
-        })
-        .catch((error) => {
-          const errorData = handleError(error);
-          notifyError(errorData.message);
-        })
-        .finally(() => {
-          setIsOrderLoading(false);
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   if (isOrderLoading) {
     return (
@@ -64,65 +49,41 @@ export const Order: React.FC = () => {
     );
   }
 
-  if (!order) {
+  if (!cartItemsCount) {
     return (
       <Page>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="subtitle1" mb={3}>
-            No data
-          </Typography>
-        </Box>
+        <Stack gap={2} alignItems="center">
+          <Typography variant="h6">Oops! You seem to be lost.</Typography>
+          <Box display="flex" gap={1} alignItems="center">
+            <Typography>Navigate back</Typography>
+            <Button onClick={() => navigate(ROUTES.BOOKS_LIST)}>Home</Button>
+          </Box>
+          <EmptyCart height={300} />
+        </Stack>
       </Page>
     );
   }
-
-  const orderHash = () => {
-    const arr = order.id.split('-');
-    return arr[arr.length - 1];
-  };
 
   return (
     <Page>
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '1fr 2fr',
+          gridTemplateColumns: '2fr 1fr',
           gridTemplateRows: 'auto',
           columnGap: 3,
         }}
       >
         <Card>
           <CardContent>
-            <Stack gap={2}>
-              <Typography align="left" variant="subtitle1" fontWeight={600}>
-                Order #{orderHash()}
-              </Typography>
-              <Typography align="left" variant="body2" color="GrayText">
-                {format(new Date(order.createdAt), 'dd MMM yyyy')}
-              </Typography>
-              <Box>
-                <StatusChip status={order.status} />
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
             <Typography mb={2} align="left" variant="subtitle1" fontWeight={600}>
-              Purchased books
+              Shopping Bag
             </Typography>
             <Stack gap={2} mb={3} sx={{ maxHeight: '60vh', overflowY: 'scroll' }}>
-              {order.items.map(({ book, id, amount, bookId }) => (
+              {Object.values(cartItems).map(({ id, amount, author, asset, title, price }) => (
                 <React.Fragment key={id}>
                   <ButtonBase
-                    onClick={() => navigate(ROUTES.BOOK.createPath(bookId, book.authorID))}
+                    onClick={() => navigate(ROUTES.BOOK.createPath(id, author.id))}
                     sx={{
                       width: 1,
                       display: 'block',
@@ -146,16 +107,16 @@ export const Order: React.FC = () => {
                           <CardMedia
                             component="img"
                             height="100"
-                            image={book.asset ?? BookSVG}
+                            image={asset ?? BookSVG}
                             alt="book-cover"
                           />
                         </Box>
                         <Stack>
                           <Typography align="left" variant="body1">
-                            {book.title}
+                            {title}
                           </Typography>
                           <Typography align="left" variant="body2">
-                            By {book.author.name} {book.author.surname}
+                            By {author.name} {author.surname}
                           </Typography>
                           <Typography color="darkcyan" align="left" variant="caption">
                             Quantity: {amount}
@@ -163,7 +124,7 @@ export const Order: React.FC = () => {
                         </Stack>
                       </Box>
                       <Box>
-                        <Typography>{book.price} ₴</Typography>
+                        <Typography>{price} ₴</Typography>
                       </Box>
                     </Box>
                   </ButtonBase>
@@ -194,9 +155,22 @@ export const Order: React.FC = () => {
                   Total
                 </Typography>
                 <Typography variant="h6" color="darkcyan" fontWeight={600}>
-                  {order.totalPrice} ₴
+                  {calculateTotalPrice(Object.values(cartItems))} ₴
                 </Typography>
               </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Stack gap={2}>
+              <Typography align="left" variant="subtitle1" fontWeight={600}>
+                Checkout
+              </Typography>
+              <Typography align="left" variant="body2" color="GrayText">
+                Something
+              </Typography>
+              <Box>Something</Box>
             </Stack>
           </CardContent>
         </Card>
