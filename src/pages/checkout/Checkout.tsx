@@ -1,3 +1,4 @@
+import { AddRounded, PlusOneRounded, RemoveRounded } from '@mui/icons-material';
 import {
   Autocomplete,
   Box,
@@ -9,6 +10,7 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  IconButton,
   Stack,
   TextField,
   Typography,
@@ -30,6 +32,7 @@ import { handleError } from '../../lib/storeApi/utils';
 import { ROUTES } from '../../routes';
 
 import { CreditCard } from './CreditCard';
+import { formatCVC, formatCreditCardNumber, formatExpirationDate } from './utils';
 
 type CardFormValues = {
   name: string;
@@ -40,7 +43,13 @@ type CardFormValues = {
 
 type Focused = 'name' | 'number' | 'expiry' | 'cvc';
 
-type FormKeys = keyof CardFormValues;
+type ShippingFormValues = {
+  city: string;
+  postNumber: string;
+  name: string;
+  surname: string;
+  phoneNumber: string;
+};
 
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -51,7 +60,7 @@ export const Checkout: React.FC = () => {
   const [cvc, setCvc] = React.useState('');
   const [expiry, setExpiry] = React.useState('');
   const [focused, setFocused] = React.useState<Focused>();
-  const { control, handleSubmit, getValues } = useForm({
+  const { control, handleSubmit, getValues } = useForm<ShippingFormValues>({
     defaultValues: {
       city: '',
       postNumber: '',
@@ -64,6 +73,10 @@ export const Checkout: React.FC = () => {
   const [isOrderLoading, setIsOrderLoading] = React.useState(false);
   const [order, setOrder] = React.useState<OrderInfo | null>(null);
   const { notifyError } = React.useContext(NotificationContext);
+  const disableSubmitBtn = (values: ShippingFormValues) => {
+    const emptyValues = Object.values(values).some((val) => !Boolean(val));
+    return emptyValues || !name || !number || !cvc || !expiry;
+  };
 
   if (isOrderLoading) {
     return (
@@ -177,13 +190,30 @@ export const Checkout: React.FC = () => {
                           <Typography align="left" variant="body2">
                             By {author.name} {author.surname}
                           </Typography>
-                          <Typography color="darkcyan" align="left" variant="caption">
-                            Quantity: {amount}
-                          </Typography>
                         </Stack>
                       </Box>
 
-                      <Box flex={1}>quantity</Box>
+                      <Box flex={1} display="flex" alignItems="center" justifyContent="center">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cartActions.addOneMoreBookToCart(id);
+                          }}
+                        >
+                          <AddRounded />
+                        </IconButton>
+                        <Typography align="left">{amount}</Typography>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cartActions.decreaseBookAmount(id);
+                          }}
+                        >
+                          <RemoveRounded />
+                        </IconButton>
+                      </Box>
                       <Box flex={1}>
                         <Typography>{price} ₴</Typography>
                       </Box>
@@ -229,15 +259,18 @@ export const Checkout: React.FC = () => {
                 Checkout
               </Typography>
               <CreditCard name={name} number={number} cvc={cvc} expiry={expiry} focused={focused} />
-              <Typography>Payment details</Typography>
+              <Typography fontWeight={600} variant="subtitle2">
+                Payment details
+              </Typography>
               <FormControl variant="standard">
                 <TextField
                   size="small"
                   value={number}
-                  onChange={({ target }) => setNumber(target.value)}
+                  onChange={({ target }) => setNumber(formatCreditCardNumber(target.value))}
                   onFocus={() => setFocused('number')}
                   onBlur={() => setFocused(undefined)}
                   label="Card number"
+                  required
                   inputProps={{
                     pattern: '[d| ]{16,22}',
                   }}
@@ -251,59 +284,134 @@ export const Checkout: React.FC = () => {
                   label="Holder name"
                   onFocus={() => setFocused('name')}
                   onBlur={() => setFocused(undefined)}
+                  required
                 />
               </FormControl>
-              <FormControl variant="standard">
-                <TextField
-                  size="small"
-                  value={expiry}
-                  onChange={({ target }) => setExpiry(target.value)}
-                  label="Expiry date"
-                  onFocus={() => setFocused('expiry')}
-                  onBlur={() => setFocused(undefined)}
-                  inputProps={{
-                    pattern: 'dd/dd',
-                  }}
+              <Box display="flex" gap={1}>
+                <FormControl variant="standard">
+                  <TextField
+                    size="small"
+                    value={expiry}
+                    onChange={({ target }) => setExpiry(formatExpirationDate(target.value))}
+                    label="Expiry date"
+                    onFocus={() => setFocused('expiry')}
+                    onBlur={() => setFocused(undefined)}
+                    required
+                    inputProps={{
+                      pattern: 'dd/dd',
+                    }}
+                  />
+                </FormControl>
+                <FormControl variant="standard">
+                  <TextField
+                    size="small"
+                    value={cvc}
+                    onChange={({ target }) =>
+                      setCvc((prev) => formatCVC(target.value, prev, { number }))
+                    }
+                    onFocus={() => setFocused('cvc')}
+                    onBlur={() => setFocused(undefined)}
+                    required
+                    label="CVC"
+                    inputProps={{
+                      pattern: 'd{3,4}',
+                    }}
+                  />
+                </FormControl>
+              </Box>
+              <Typography fontWeight={600} variant="subtitle2">
+                Shipping details
+              </Typography>
+              <Box display="flex" gap={1}>
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({ field: { onChange, name: _, ...rest } }) => (
+                    <FormControl variant="standard" sx={{ flex: 1 }}>
+                      <Autocomplete
+                        options={['Kyiv', 'Odesa', 'Kharkiv', 'Poltava', 'Chernivtsi', 'Lutsk']}
+                        onChange={(_, value) => onChange(value)}
+                        {...rest}
+                        isOptionEqualToValue={(o, v) => isEqual(o, v)}
+                        renderInput={(params) => (
+                          <TextField {...params} required size="small" label="City" />
+                        )}
+                      />
+                    </FormControl>
+                  )}
                 />
-              </FormControl>
-              <FormControl variant="standard">
-                <TextField
-                  size="small"
-                  value={cvc}
-                  onChange={({ target }) => setCvc(target.value)}
-                  onFocus={() => setFocused('cvc')}
-                  onBlur={() => setFocused(undefined)}
-                  label="CVC"
-                  inputProps={{
-                    pattern: 'd{3,4}',
-                  }}
+
+                <Controller
+                  name="postNumber"
+                  control={control}
+                  render={({ field: { onChange, name: _, ...rest } }) => (
+                    <FormControl variant="standard" sx={{ flex: 1 }}>
+                      <Autocomplete
+                        options={['#1', '#9', '#12', '#13', '#17', '#20']}
+                        onChange={(_, value) => onChange(value)}
+                        {...rest}
+                        isOptionEqualToValue={(o, v) => isEqual(o, v)}
+                        renderInput={(params) => (
+                          <TextField {...params} required size="small" label="NovaPoshta number" />
+                        )}
+                      />
+                    </FormControl>
+                  )}
                 />
-              </FormControl>
-              <Typography>Shipping details</Typography>
-              {/* <Controller
-                name="city"
+              </Box>
+
+              <Box display="flex" gap={1}>
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl variant="standard">
+                      <TextField {...field} required size="small" label="Name" />
+                    </FormControl>
+                  )}
+                />
+                <Controller
+                  name="surname"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl variant="standard">
+                      <TextField {...field} required size="small" label="Surname" />
+                    </FormControl>
+                  )}
+                />
+              </Box>
+              <Controller
+                name="phoneNumber"
                 control={control}
-                render={({ field: { onChange, ...rest } }) => (
+                render={({ field }) => (
                   <FormControl variant="standard">
-                    <Autocomplete
-                      options={[
-                        'Kyiv',
-                        'Odesa',
-                        // { label: 'Kyiv', value: 'Kyiv' },
-                        // { label: 'Odesa', value: 'Odesa' },
-                        // { label: 'Kharkiv', value: 'Kharkiv' },
-                        // { label: 'Poltava', value: 'Poltava' },
-                        // { label: 'Chernivtsi', value: 'Chernivtsi' },
-                        // { label: 'Lutsk', value: 'Lutsk' },
-                      ]}
-                      onChange={(_, value) => onChange(value)}
-                      {...rest}
-                      isOptionEqualToValue={(o, v) => isEqual(o, v)}
-                      renderInput={() => <TextField size="small" label="City" />}
+                    <TextField
+                      {...field}
+                      size="small"
+                      type="number"
+                      label="Phone number"
+                      required
+                      InputProps={{
+                        startAdornment: (
+                          <Typography fontWeight={600} variant="body1">
+                            +380-
+                          </Typography>
+                        ),
+                      }}
                     />
                   </FormControl>
                 )}
-              /> */}
+              />
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  color="primary"
+                  variant="contained"
+                  onClick={() => {}}
+                  disabled={disableSubmitBtn(getValues())}
+                >
+                  Pay & Submit
+                </Button>
+              </Box>
             </Stack>
           </CardContent>
         </Card>
