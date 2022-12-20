@@ -113,3 +113,42 @@ export const searchBook = async (query: string) => {
     `api/book/search?query=${query}`,
   );
 };
+
+export type UploadImageResponse = {
+  imageDetails: {
+    asset_id: string;
+    public_id: string;
+    version: number;
+    version_id: string;
+    signature: string;
+    width: number;
+    height: number;
+    format: string;
+    resource_type: string;
+    created_at: string;
+    tags: string[];
+    bytes: number;
+    type: string;
+    etag: string;
+    placeholder: false;
+    url: string;
+    secure_url: string;
+    folder: string;
+    original_filename: string;
+  };
+};
+
+export const uploadImage = async (bookID: string, authorID: string, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return await axiosInstance.post<UploadImageResponse>(
+    `/api/upload/${bookID}/${authorID}`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    },
+  );
+};

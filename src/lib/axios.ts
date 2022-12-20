@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import { RootState } from '../redux/store';
+
+import { getToken } from './localStorage';
 
 const axiosInstance = axios.create({
   baseURL: 'https://bookstore-api-370618.lm.r.appspot.com/',
@@ -7,15 +8,10 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    const store = localStorage.getItem('persist:root');
+    const token = getToken();
 
-    if (store) {
-      const { user } = JSON.parse(store) as { user: string };
-      const parsedUser = JSON.parse(user) as RootState['user'];
-
-      if (parsedUser.token && config.headers) {
-        config.headers['Authorization'] = `Bearer ${parsedUser.token}`;
-      }
+    if (token && config.headers) {
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
 
     return config;

@@ -44,3 +44,19 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+# Credit card test
+
+Visa: 4646 4646 4646 4644
+VisaElectron: 4917300800000000
+MasterCard: 2222 4000 7000 0005
+Discover: 6011 6011 6011 6611
+Maestro: 6759649826438453
+Amax: 3700 0000 0000 002
+Hipercard: 60\*
+JCB: 3569 9900 1009 5841
+Elo: 5066 9911 1111 1118
+Laser: 6771 7980 2100 0008
+Dancort: 5019 5555 4444 5555
+
+//https://codesandbox.io/s/9y8vkrrx9o?file=/src/Card.js:41344-41349

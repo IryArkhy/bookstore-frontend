@@ -1,4 +1,5 @@
-import { AddRounded, PlusOneRounded, RemoveRounded } from '@mui/icons-material';
+import { AddRounded, DeleteRounded, RemoveRounded } from '@mui/icons-material';
+import { LoadingButton } from '@mui/lab';
 import {
   Autocomplete,
   Box,
@@ -7,7 +8,6 @@ import {
   Card,
   CardContent,
   CardMedia,
-  CircularProgress,
   Divider,
   FormControl,
   IconButton,
@@ -16,30 +16,22 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { format } from 'date-fns';
 import { isEqual } from 'lodash';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import BookSVG from '../../assets/book.svg';
 import { ReactComponent as EmptyCart } from '../../assets/empty-cart.svg';
-import { Page, StatusChip } from '../../components';
+import { Page } from '../../components';
 import { calculateTotalPrice, useCart } from '../../lib/cart';
 import { NotificationContext } from '../../lib/notifications';
-import { OrderInfo } from '../../lib/storeApi/orders';
+import { createOrder } from '../../lib/storeApi/orders';
 import { handleError } from '../../lib/storeApi/utils';
 import { ROUTES } from '../../routes';
 
 import { CreditCard } from './CreditCard';
 import { formatCVC, formatCreditCardNumber, formatExpirationDate } from './utils';
-
-type CardFormValues = {
-  name: string;
-  number: string;
-  cvc: string;
-  expiry: string;
-};
 
 type Focused = 'name' | 'number' | 'expiry' | 'cvc';
 
@@ -60,7 +52,7 @@ export const Checkout: React.FC = () => {
   const [cvc, setCvc] = React.useState('');
   const [expiry, setExpiry] = React.useState('');
   const [focused, setFocused] = React.useState<Focused>();
-  const { control, handleSubmit, getValues } = useForm<ShippingFormValues>({
+  const { control, watch } = useForm<ShippingFormValues>({
     defaultValues: {
       city: '',
       postNumber: '',
@@ -71,35 +63,38 @@ export const Checkout: React.FC = () => {
   });
 
   const [isOrderLoading, setIsOrderLoading] = React.useState(false);
-  const [order, setOrder] = React.useState<OrderInfo | null>(null);
   const { notifyError } = React.useContext(NotificationContext);
-  const disableSubmitBtn = (values: ShippingFormValues) => {
-    const emptyValues = Object.values(values).some((val) => !Boolean(val));
+
+  const disableSubmitBtn = () => {
+    const val = watch();
+    const emptyValues = Object.values(val).some((v) => !Boolean(v));
     return emptyValues || !name || !number || !cvc || !expiry;
   };
 
-  if (isOrderLoading) {
-    return (
-      <Page>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      </Page>
-    );
-  }
+  const handleSubmit = async () => {
+    const orderBody = Object.values(cartItems).map((item) => ({
+      bookID: item.id,
+      authorID: item.author.id,
+      amount: item.amount,
+    }));
+
+    try {
+      setIsOrderLoading(true);
+      const order = await createOrder(orderBody);
+      cartActions.clear();
+      navigate(ROUTES.ORDER.createPath(order.data.order.id));
+    } catch (error) {
+      notifyError(handleError(error).message);
+    } finally {
+      setIsOrderLoading(false);
+    }
+  };
 
   if (!cartItemsCount) {
     return (
       <Page>
         <Stack gap={2} alignItems="center">
-          <Typography variant="h6">Oops! You seem to be lost.</Typography>
+          <Typography variant="h6">Your shopping bag is empty. Start adding some books!</Typography>
           <Box display="flex" gap={1} alignItems="center">
             <Typography>Navigate back</Typography>
             <Button onClick={() => navigate(ROUTES.BOOKS_LIST)}>Home</Button>
@@ -125,6 +120,7 @@ export const Checkout: React.FC = () => {
             <Typography mb={2} align="left" variant="subtitle1" fontWeight={600}>
               Shopping Bag
             </Typography>
+
             <Stack
               gap={2}
               mb={3}
@@ -181,6 +177,11 @@ export const Checkout: React.FC = () => {
                             height="100"
                             image={asset ?? BookSVG}
                             alt="book-cover"
+                            sx={{
+                              width: 70,
+                              transform: !asset ? 'scale(0.9)' : undefined,
+                              objectFit: !asset ? 'contain' : 'cover',
+                            }}
                           />
                         </Box>
                         <Stack>
@@ -214,8 +215,22 @@ export const Checkout: React.FC = () => {
                           <RemoveRounded />
                         </IconButton>
                       </Box>
-                      <Box flex={1}>
+                      <Box
+                        flex={1}
+                        display="flex"
+                        gap={1}
+                        alignItems="center"
+                        justifyContent="flex-end"
+                      >
                         <Typography>{price} ₴</Typography>
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cartActions.removeBookFromCart(id);
+                          }}
+                        >
+                          <DeleteRounded />
+                        </IconButton>
                       </Box>
                     </Box>
                   </ButtonBase>
@@ -241,13 +256,23 @@ export const Checkout: React.FC = () => {
                   0 ₴
                 </Typography>
               </Box>
-              <Box display="flex" justifyContent="space-between">
+              <Box display="flex" justifyContent="space-between" mb={4}>
                 <Typography variant="h6" fontWeight={600}>
                   Total
                 </Typography>
                 <Typography variant="h6" color="darkcyan" fontWeight={600}>
                   {calculateTotalPrice(Object.values(cartItems))} ₴
                 </Typography>
+              </Box>
+              <Box display="flex" alignItems="center" justifyContent="flex-end">
+                <Button
+                  onClick={() => cartActions.clear()}
+                  variant="contained"
+                  color="error"
+                  size="small"
+                >
+                  Clear all
+                </Button>
               </Box>
             </Stack>
           </CardContent>
@@ -403,14 +428,15 @@ export const Checkout: React.FC = () => {
                 )}
               />
               <Box display="flex" justifyContent="flex-end">
-                <Button
-                  color="primary"
+                <LoadingButton
+                  loading={isOrderLoading}
+                  disabled={disableSubmitBtn()}
+                  loadingPosition="center"
                   variant="contained"
-                  onClick={() => {}}
-                  disabled={disableSubmitBtn(getValues())}
+                  onClick={handleSubmit}
                 >
                   Pay & Submit
-                </Button>
+                </LoadingButton>
               </Box>
             </Stack>
           </CardContent>

@@ -37,7 +37,7 @@ export const useCart = () => {
   };
 
   const clear = () => {
-    dispatch(clearCart);
+    dispatch(clearCart());
   };
 
   const cartItemsCount = Object.keys(cartItems).length;
@@ -48,10 +48,8 @@ export const useCart = () => {
     cartActions: {
       addBookToCart,
       addOneMoreBookToCart,
-      decreaseByOneItem,
       removeBookFromCart,
       decreaseBookAmount,
-      clearCart,
       clear,
     },
   };

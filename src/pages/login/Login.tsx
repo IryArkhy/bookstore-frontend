@@ -1,6 +1,7 @@
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
+  Box,
   Button,
   Card,
   CardContent,
@@ -11,19 +12,18 @@ import {
   Stack,
   TextField,
   Typography,
-  Box,
 } from '@mui/material';
 import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
-import { ReactComponent as Reading } from '../../assets/reading.svg';
 import { ReactComponent as Logo } from '../../assets/logo-no-background.svg';
-import { useDispatch } from '../../redux/hooks';
-import { ROUTES } from '../../routes';
-import { login } from '../../redux/user/thunks';
+import { ReactComponent as Reading } from '../../assets/reading.svg';
 import { NotificationContext } from '../../lib/notifications';
 import { ErrorData } from '../../lib/storeApi/utils';
+import { useDispatch } from '../../redux/hooks';
+import { login } from '../../redux/user/thunks';
+import { ROUTES } from '../../routes';
 
 type LoginFormValues = {
   email: string;

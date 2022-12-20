@@ -25,14 +25,17 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 
 import BookSVG from '../../assets/book.svg';
-import { Page } from '../../components';
+import { Page, SelectFilesTrigger } from '../../components';
 import { useCart } from '../../lib/cart';
 import { NotificationContext } from '../../lib/notifications';
-import { BookDetails, fetchBookByID, postBookComment } from '../../lib/storeApi/books';
+import { BookDetails, fetchBookByID, postBookComment, uploadImage } from '../../lib/storeApi/books';
 import { handleError } from '../../lib/storeApi/utils';
 import { getAdjustedImageSize } from '../../lib/styles';
+import { useSelector } from '../../redux/hooks';
+import { getUser } from '../../redux/user/selectors';
 
 export const Book: React.FC = () => {
+  const user = useSelector(getUser);
   const params = useParams<{ bookID: string; authorID: string }>();
   const [isBookLoading, setIsBookLoading] = React.useState(false);
   const [isCommentLoading, setIsCommentLoading] = React.useState(false);
@@ -40,6 +43,8 @@ export const Book: React.FC = () => {
   const [userRating, setUserRating] = React.useState<number | null>(null);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
   const emojiPickerRef = React.useRef<HTMLDivElement | null>(null);
+  const uploadInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isImageLoading, setIsImageLoading] = React.useState(false);
 
   const [book, setBook] = React.useState<BookDetails | null>(null);
   const { notifyError } = React.useContext(NotificationContext);
@@ -153,6 +158,51 @@ export const Book: React.FC = () => {
     }
   };
 
+  const handleImageUpload = async ({ currentTarget }: React.ChangeEvent<HTMLInputElement>) => {
+    if (currentTarget.files?.length) {
+      const selectedFilesList = [...currentTarget.files];
+
+      try {
+        setIsImageLoading(true);
+        const {
+          data: { imageDetails },
+        } = await uploadImage(book.id, book.authorID, selectedFilesList[0]);
+        setBook((current) =>
+          current
+            ? {
+                ...current,
+                asset: imageDetails.secure_url,
+                bookAssest: {
+                  width: imageDetails.width,
+                  height: imageDetails.height,
+                  id: imageDetails.asset_id,
+                  url: imageDetails.url,
+                  secureUrl: imageDetails.secure_url,
+                  assetID: imageDetails.asset_id,
+                  bookID: book.id,
+                  publicID: imageDetails.public_id,
+                },
+              }
+            : current,
+        );
+      } catch (error) {
+        notifyError(handleError(error).message);
+      } finally {
+        setIsImageLoading(false);
+      }
+    }
+  };
+
+  function handleUploadClick() {
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = '';
+    }
+
+    if (uploadInputRef.current) {
+      uploadInputRef.current.click();
+    }
+  }
+
   return (
     <Page>
       <Stack gap={3}>
@@ -173,7 +223,18 @@ export const Book: React.FC = () => {
             />
             <Stack gap={2}>
               <Stack gap={0}>
-                <Typography variant="h6">{book.title}</Typography>
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <Typography variant="h6">{book.title}</Typography>
+                  {user?.role === 'ADMIN' && (
+                    <SelectFilesTrigger
+                      loading={isImageLoading}
+                      ref={uploadInputRef}
+                      onInputValueChange={handleImageUpload}
+                      onUploadTriggerClick={handleUploadClick}
+                      acceptedFormat="image/*"
+                    />
+                  )}
+                </Box>
                 <Typography color="GrayText" variant="body2">
                   By {book.author.name} {book.author.surname}
                 </Typography>

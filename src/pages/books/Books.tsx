@@ -356,7 +356,7 @@ export default function MultiActionAreaCard({ book }: { book: BooksListItem }) {
           component="img"
           height={imageRatio.height}
           image={img}
-          alt="green iguana"
+          alt={`${book.title}-cover`}
           sx={{
             width: imageRatio.width,
             transform: img === BookSVG ? 'scale(0.9)' : undefined,

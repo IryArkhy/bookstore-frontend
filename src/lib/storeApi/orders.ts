@@ -1,4 +1,5 @@
 import axiosInstance from '../axios';
+
 import { BookBase } from './books';
 
 export enum OrderStatus {
@@ -45,4 +46,25 @@ export type OrderInfo = UserOrderBase & {
 
 export const fetchOrderByID = async (id: string) => {
   return await axiosInstance.get<{ order: OrderInfo }>(`/api/order/${id}`);
+};
+
+export type CreateOrderBody = { bookID: string; authorID: string; amount: number }[];
+
+export type OrderResponse = {
+  order: {
+    id: string;
+    createdAt: string;
+    userID: string;
+    status: OrderStatus;
+    totalPrice: number;
+    orderItems: {
+      count: number;
+    };
+  };
+};
+export const createOrder = async (data: CreateOrderBody) => {
+  console.log({ data });
+  return await axiosInstance.post<OrderResponse>('api/order', {
+    orderItems: data,
+  });
 };
