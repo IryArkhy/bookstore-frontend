@@ -87,8 +87,9 @@ export const fetchBooks = async (data: {
   limit: number;
   genres: Genre['name'][];
   year?: BookBase['year'];
+  token?: string;
 }) => {
-  const { offset, limit, year, genres } = data;
+  const { offset, limit, year, genres, token } = data;
 
   const queryData: Record<string, any> = {};
 
@@ -105,7 +106,16 @@ export const fetchBooks = async (data: {
     '',
   );
 
-  return await axiosInstance.get<BooksList>(`api/book/?offset=${offset}&limit=${limit}${query}`);
+  return await axiosInstance.get<BooksList>(
+    `api/book/?offset=${offset}&limit=${limit}${query}`,
+    token
+      ? {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : {},
+  );
 };
 
 export const searchBook = async (query: string) => {

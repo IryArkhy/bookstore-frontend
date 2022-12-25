@@ -5,6 +5,15 @@ export type Genre = {
   name: string;
 };
 
-export const fetchGenres = async () => {
-  return await axiosInstance.get<{ genres: Genre[] }>('api/genre');
+export const fetchGenres = async (token?: string) => {
+  return await axiosInstance.get<{ genres: Genre[] }>(
+    'api/genre',
+    token
+      ? {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : {},
+  );
 };

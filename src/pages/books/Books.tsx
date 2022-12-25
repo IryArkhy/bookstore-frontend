@@ -31,6 +31,8 @@ import { BooksList, BooksListItem, fetchBooks, searchBook } from '../../lib/stor
 import { Genre, fetchGenres } from '../../lib/storeApi/genres';
 import { handleError } from '../../lib/storeApi/utils';
 import { getAdjustedImageSize } from '../../lib/styles';
+import { useSelector } from '../../redux/hooks';
+import { getToken } from '../../redux/user/selectors';
 import { ROUTES } from '../../routes';
 
 type GenreFormValues = {
@@ -38,6 +40,7 @@ type GenreFormValues = {
 };
 
 export const Books: React.FC = () => {
+  const token = useSelector(getToken);
   const { notifyError } = React.useContext(NotificationContext);
   const [searchValue, setSearchValue] = React.useState('');
   const [genres, setGenres] = React.useState<Genre[]>([]);
@@ -67,7 +70,7 @@ export const Books: React.FC = () => {
 
   React.useEffect(() => {
     setIsGenresLoading(true);
-    fetchGenres()
+    fetchGenres(token ?? undefined)
       .then((res) => {
         setGenres(res.data.genres);
         res.data.genres.forEach((genre) => setValue(genre.name, false));
@@ -88,6 +91,7 @@ export const Books: React.FC = () => {
         .filter(([_, value]) => value)
         .map(([genre]) => genre),
       year: year ? parseInt(year) : undefined,
+      token: token ?? undefined,
     })
       .then((res) => {
         setBooks(res.data);
@@ -102,12 +106,13 @@ export const Books: React.FC = () => {
   };
 
   const handleSearch = () => {
+    setBooks(null);
+    clearFilters();
     setIsBooksLoading(true);
+
     searchBook(searchValue)
       .then((res) => {
         setSearchedBooks(res.data);
-        setBooks(null);
-        handleResetFilters();
       })
       .catch((error) => notifyError(handleError(error).message))
       .finally(() => setIsBooksLoading(false));
@@ -117,7 +122,15 @@ export const Books: React.FC = () => {
     async (entries) => {
       const [target] = entries;
 
-      if (target.isIntersecting && !isBooksLoading && books && books.offset) {
+      if (
+        target.isIntersecting &&
+        !isBooksLoading &&
+        !isGenresLoading &&
+        books &&
+        books.offset &&
+        !searchedBooks
+      ) {
+        console.log('Observer');
         setIsBooksLoading(true);
         try {
           const { data } = await fetchBooks({
@@ -158,7 +171,7 @@ export const Books: React.FC = () => {
     };
   }, [handleObserver]);
 
-  const handleResetFilters = () => {
+  const clearFilters = () => {
     reset(
       genres.reduce((obj, item) => {
         obj[item.name] = false;
@@ -167,8 +180,11 @@ export const Books: React.FC = () => {
     );
     setLimit(20);
     setYear('');
+  };
 
+  const handleResetFiltersAndFetch = () => {
     if (!searchedBooks) {
+      clearFilters();
       handleFetchBooks(getValues(), 0);
     }
   };
@@ -211,7 +227,7 @@ export const Books: React.FC = () => {
                 <Button
                   variant="outlined"
                   color="warning"
-                  onClick={handleResetFilters}
+                  onClick={handleResetFiltersAndFetch}
                   sx={{ flex: 1 }}
                 >
                   Clear

@@ -1,6 +1,8 @@
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { LoadingButton } from '@mui/lab';
 import {
+  Box,
   Button,
   Card,
   CardContent,
@@ -11,19 +13,18 @@ import {
   Stack,
   TextField,
   Typography,
-  Box,
 } from '@mui/material';
 import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
-import { ReactComponent as Logo } from '../../assets/logo-no-background.svg';
 import { ReactComponent as Authentication } from '../../assets/authentication.svg';
-import { useDispatch } from '../../redux/hooks';
+import { ReactComponent as Logo } from '../../assets/logo-no-background.svg';
 import { NotificationContext } from '../../lib/notifications';
-import { ROUTES } from '../../routes';
 import { ErrorData } from '../../lib/storeApi/utils';
+import { useDispatch } from '../../redux/hooks';
 import { signUp } from '../../redux/user/thunks';
+import { ROUTES } from '../../routes';
 
 type SignUpFormValues = {
   email: string;
@@ -34,6 +35,7 @@ type SignUpFormValues = {
 export const SignUp: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = React.useState(false);
   const { control, handleSubmit } = useForm<SignUpFormValues>({
     defaultValues: {
       email: '',
@@ -54,8 +56,9 @@ export const SignUp: React.FC = () => {
   };
 
   const handleSignUp = async ({ email, username, password }: SignUpFormValues) => {
+    setIsLoading(true);
     const resultAction = await dispatch(signUp({ email, username, password }));
-
+    setIsLoading(false);
     if (resultAction.meta.requestStatus === 'rejected') {
       notifyError((resultAction.payload as ErrorData).message);
     } else {
@@ -157,11 +160,18 @@ export const SignUp: React.FC = () => {
                   </FormControl>
                 )}
               />
-              <Button type="submit" variant="contained" sx={{ alignSelf: 'center' }}>
+              <LoadingButton
+                loading={isLoading}
+                type="submit"
+                variant="contained"
+                sx={{ alignSelf: 'center' }}
+              >
                 Sign Up
-              </Button>
+              </LoadingButton>
+
               <Box display="flex" alignItems="center" justifyContent="center">
                 <Typography variant="caption">Already have an account? Go</Typography>
+
                 <Button
                   size="small"
                   color="primary"

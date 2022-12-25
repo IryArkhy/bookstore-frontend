@@ -1,5 +1,6 @@
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Button,
@@ -33,6 +34,7 @@ type LoginFormValues = {
 export const Login: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = React.useState(false);
   const { control, handleSubmit } = useForm<LoginFormValues>({
     defaultValues: {
       email: '',
@@ -51,7 +53,9 @@ export const Login: React.FC = () => {
   };
 
   const handleLogin = async (values: LoginFormValues) => {
+    setIsLoading(true);
     const resultAction = await dispatch(login({ email: values.email, password: values.password }));
+    setIsLoading(false);
 
     if (resultAction.meta.requestStatus === 'rejected') {
       notifyError((resultAction.payload as ErrorData).message);
@@ -136,9 +140,15 @@ export const Login: React.FC = () => {
                   </FormControl>
                 )}
               />
-              <Button type="submit" variant="contained" sx={{ alignSelf: 'center' }}>
+              <LoadingButton
+                loading={isLoading}
+                type="submit"
+                variant="contained"
+                sx={{ alignSelf: 'center' }}
+              >
                 Login
-              </Button>
+              </LoadingButton>
+
               <Box display="flex" alignItems="center" justifyContent="center">
                 <Typography variant="caption">Don't have an account? Create</Typography>
                 <Button
